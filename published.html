@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conqueror Kingdom</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Orbitron&family=MedievalSharp&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  min-height: 100vh;
+}
+
+html {
+  background: #000;
+}
+header {
+  text-align: center;
+  padding: 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 2.2em;
+}
+.topbar {
+  text-align: center;
+  border-bottom: 1px solid white;
+  padding-bottom: 10px;
+}
+h3 { font-family: 'MedievalSharp', cursive; }
+button {
+  background: #111;
+  color: white;
+  border: 1px solid white;
+  padding: 12px 20px;
+  cursor: pointer;
+  margin: 5px;
+}
+button:hover { background: #333; }
+.page { display: none; }
+.active { display: block; }
+.hidden { display: none; }
+
+.panel {
+  border: 1px solid white;
+  margin: 20px auto;
+  padding: 20px;
+  width: 300px;
+  text-align: center;
+}
+input { padding: 10px; margin: 5px; width: 80%; }
+</style>
+</head>
+<body>
+
+<header>Conqueror Kingdom</header>
+
+<div class="topbar">
+  <button onclick="switchPage('home')">Home</button>
+  <button onclick="switchPage('redeem')">Redeem</button>
+  <button onclick="switchPage('staff')">Staff</button>
+  <button onclick="joinDiscord()">POC - PILLARS OF CONQUEST</button>
+</div>
+
+<!-- HOME PAGE -->
+<div id="home" class="page active">
+  <div class="panel">
+    <h3>Daily Rewards</h3>
+    <p id="balance">Balance: 0 Gold</p>
+    <button onclick="claimReward()">Claim Daily Reward</button>
+  </div>
+
+  <div class="panel">
+    <h3>Theme Customizer</h3>
+    <button onclick="setTheme('black')">Black</button>
+    <button onclick="setTheme('white')">White</button>
+    <br><br>
+    <input id="rgb" placeholder="RGB (255,0,0)">
+  </div>
+</div>
+
+<!-- REDEEM PAGE -->
+<div id="redeem" class="page">
+  <div class="panel">
+    <h3>Redeem Code</h3>
+    <input id="redeemInput" placeholder="Enter Code">
+    <button onclick="redeemCode()">Redeem</button>
+  </div>
+</div>
+
+<!-- STAFF PAGE -->
+<div id="staff" class="page">
+  <div class="panel hidden" id="staffPanel">
+    <h3>Staff Panel</h3>
+    <input id="codeAmount" placeholder="Gold Amount (e.g. 500)">
+    <input id="codeType" placeholder="Type: GOLD or RGB">
+    <button onclick="createCode()">Generate Code</button>
+    <p id="codes"></p>
+  </div>
+
+  <div class="panel">
+    <h3>Staff Access</h3>
+    <input id="staffCode" placeholder="Enter Staff Code">
+    <button onclick="unlockStaff()">Unlock</button>
+  </div>
+</div>
+
+<script>
+let balance = 0;
+let lastClaim = 0;
+let codes = {};
+let staffUnlocked = false;
+let rgbUnlocked = false;
+
+const STAFF_SECRET = "KING123";
+
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(page).classList.add('active');
+}
+
+function joinDiscord() {
+  window.open('https://discord.gg/Rsr3YCkSEN');
+}
+
+function claimReward() {
+  let now = Date.now();
+  if (now - lastClaim > 86400000) {
+    let reward = Math.floor(Math.random() * 100) + 50;
+    balance += reward;
+    lastClaim = now;
+    updateBalance();
+  } else {
+    alert('Come back tomorrow');
+  }
+}
+
+function updateBalance() {
+  document.getElementById('balance').innerText = 'Balance: ' + balance + ' Gold';
+}
+
+function setTheme(mode) {
+  if (mode === 'black') {
+    document.body.style.background = '#000';
+    document.body.style.color = '#fff';
+  }
+  if (mode === 'white') {
+    document.body.style.background = '#fff';
+    document.body.style.color = '#000';
+  }
+}
+
+function redeemCode() {
+  let input = document.getElementById('redeemInput').value;
+
+  if (codes[input]) {
+    let value = codes[input];
+
+    if (value === 'RGB') {
+      rgbUnlocked = true;
+      alert('RGB unlocked');
+    } else {
+      balance += value;
+      updateBalance();
+      alert('You received ' + value + ' Gold');
+    }
+
+    delete codes[input];
+  } else {
+    alert('Invalid or used code');
+  }
+}
+
+function createCode() {
+  if (!staffUnlocked) return alert('Staff only');
+
+  let code = Math.random().toString(36).substring(2, 10).toUpperCase();
+  let type = document.getElementById('codeType').value.toUpperCase();
+  let amount = parseInt(document.getElementById('codeAmount').value);
+
+  if (type === 'RGB') {
+    codes[code] = 'RGB';
+  } else {
+    codes[code] = amount || 0;
+  }
+
+  document.getElementById('codes').innerText = JSON.stringify(codes, null, 2);
+}
+
+function unlockStaff() {
+  let input = document.getElementById('staffCode').value;
+  if (input === STAFF_SECRET) {
+    staffUnlocked = true;
+    document.getElementById('staffPanel').classList.remove('hidden');
+  } else {
+    alert('Wrong code');
+  }
+}
+
+// RGB
+
+document.getElementById('rgb').addEventListener('input', function() {
+  if (!rgbUnlocked) return;
+
+  let val = this.value.split(',');
+  if (val.length === 3) {
+    let r = parseInt(val[0]);
+    let g = parseInt(val[1]);
+    let b = parseInt(val[2]);
+
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      document.body.style.background = `rgb(${r}, ${g}, ${b})`;
+    }
+  }
+});
+</script>
+
+</body>
+</html>
